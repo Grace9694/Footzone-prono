@@ -19,12 +19,13 @@ jobs:
       - name: Installer requests
         run: pip install requests
 
-      - name: Lancer le programme du matin
+      - name: Récupérer les matchs du jour
         env:
           API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
         run: python scripts/matin.py
 
-      - name: Lancer le module d'analyse
-        env:
-          API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
+      - name: Filtrer les matchs
         run: python scripts/analyse.py
+
+      - name: Préparer les données statistiques
+        run: python scripts/statistiques.py
