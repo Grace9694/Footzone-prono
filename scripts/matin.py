@@ -49,4 +49,22 @@ print("Données sauvegardées dans : matchs.json")
 print()
 
 for match in matchs:
-    match_id = match["fixture
+    match_id = match["fixture"]["id"]
+    home = match["teams"]["home"]["name"]
+    away = match["teams"]["away"]["name"]
+    league = match["league"]["name"]
+    heure = match["fixture"]["date"][11:16]
+    statut = match["fixture"]["status"]["short"]
+
+    print(
+        f"ID: {match_id} | "
+        f"{heure} | "
+        f"{league} | "
+        f"{home} - {away} | "
+        f"{statut}"
+    )
+
+print()
+print("=" * 70)
+print("FIN DE LA RÉCUPÉRATION")
+print("=" * 70)
