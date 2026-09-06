@@ -1,4 +1,5 @@
 import os
+import json
 import requests
 from datetime import datetime
 
@@ -39,26 +40,13 @@ if data.get("errors"):
 
 matchs = data.get("response", [])
 
+# Sauvegarde des données pour le module d'analyse
+with open("matchs.json", "w", encoding="utf-8") as fichier:
+    json.dump(data, fichier, ensure_ascii=False, indent=2)
+
 print("Nombre de matchs trouvés :", len(matchs))
+print("Données sauvegardées dans : matchs.json")
 print()
 
 for match in matchs:
-    match_id = match["fixture"]["id"]
-    home = match["teams"]["home"]["name"]
-    away = match["teams"]["away"]["name"]
-    league = match["league"]["name"]
-    heure = match["fixture"]["date"][11:16]
-    statut = match["fixture"]["status"]["short"]
-
-    print(
-        f"ID: {match_id} | "
-        f"{heure} | "
-        f"{league} | "
-        f"{home} - {away} | "
-        f"{statut}"
-    )
-
-print()
-print("=" * 70)
-print("FIN DE LA RÉCUPÉRATION")
-print("=" * 70)
+    match_id = match["fixture
