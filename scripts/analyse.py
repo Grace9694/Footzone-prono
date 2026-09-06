@@ -1,17 +1,4 @@
-import os
-import requests
-from datetime import datetime
-
-API_KEY = os.environ["API_FOOTBALL_KEY"]
-
-DATE_DU_JOUR = datetime.utcnow().strftime("%Y-%m-%d")
-
-URL = "https://v3.football.api-sports.io/fixtures"
-
-HEADERS = {
-    "x-apisports-key": API_KEY,
-    "Accept": "application/json"
-}
+import json
 
 
 # Compétitions que Footzone considère comme prioritaires
@@ -31,21 +18,15 @@ COMPETITIONS_PRIORITAIRES = {
 }
 
 
-def recuperer_matchs():
-    params = {
-        "date": DATE_DU_JOUR
-    }
+def charger_matchs():
+    """Charge les matchs récupérés par matin.py."""
 
-    response = requests.get(
-        URL,
-        params=params,
-        headers=HEADERS,
-        timeout=30
-    )
-
-    response.raise_for_status()
-
-    data = response.json()
+    try:
+        with open("matchs.json", "r", encoding="utf-8") as fichier:
+            data = json.load(fichier)
+    except FileNotFoundError:
+        print("ERREUR : le fichier matchs.json est introuvable.")
+        raise SystemExit(1)
 
     if data.get("errors"):
         print("ERREURS API :", data["errors"])
@@ -68,14 +49,14 @@ def calculer_score_initial(match):
     if league in COMPETITIONS_PRIORITAIRES:
         score += 40
 
-    # Match avec deux équipes identifiées
+    # Deux équipes correctement identifiées
     home = match["teams"]["home"]["name"]
     away = match["teams"]["away"]["name"]
 
     if home and away:
         score += 20
 
-    # Match ayant un horaire disponible
+    # Horaire disponible
     if match["fixture"].get("date"):
         score += 10
 
@@ -86,9 +67,11 @@ def filtrer_matchs(matchs):
     selection = []
 
     for match in matchs:
+
         statut = match["fixture"]["status"]["short"]
 
-        # On ignore les matchs déjà terminés
+        # On ignore les matchs déjà terminés,
+        # annulés, reportés ou abandonnés
         if statut in {"FT", "AET", "PEN", "CANC", "PST", "ABD"}:
             continue
 
@@ -99,7 +82,7 @@ def filtrer_matchs(matchs):
             "match": match
         })
 
-    # Classement du meilleur score au plus faible
+    # Meilleur score en premier
     selection.sort(
         key=lambda element: element["score"],
         reverse=True
@@ -109,6 +92,7 @@ def filtrer_matchs(matchs):
 
 
 def afficher_selection(selection):
+
     print()
     print("=" * 70)
     print("FOOTZONE PRONO — PREMIÈRE SÉLECTION")
@@ -118,6 +102,7 @@ def afficher_selection(selection):
     print()
 
     for numero, element in enumerate(selection[:20], start=1):
+
         match = element["match"]
 
         home = match["teams"]["home"]["name"]
@@ -140,6 +125,9 @@ def afficher_selection(selection):
 
 
 if __name__ == "__main__":
-    matchs = recuperer_matchs()
+
+    matchs = charger_matchs()
+
     selection = filtrer_matchs(matchs)
+
     afficher_selection(selection)
