@@ -1,0 +1,25 @@
+name: Test programme du matin
+
+on:
+  workflow_dispatch:
+
+jobs:
+  matin:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Récupérer le projet
+        uses: actions/checkout@v4
+
+      - name: Installer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Installer requests
+        run: pip install requests
+
+      - name: Lancer le programme du matin
+        env:
+          API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
+        run: python scripts/matin.py
