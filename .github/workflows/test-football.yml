@@ -1,0 +1,44 @@
+name: Test Footzone Prono
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-football:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Récupérer les matchs du jour
+        env:
+          API_KEY: ${{ secrets.API_FOOTBALL_KEY }}
+        run: |
+          DATE=$(date -u +%Y-%m-%d)
+
+          echo "Recherche des matchs du $DATE..."
+
+          curl -s \
+            --request GET \
+            --url "https://v3.football.api-sports.io/fixtures?date=$DATE" \
+            --header "x-apisports-key: $API_KEY" \
+            --header "Accept: application/json" \
+            > matchs.json
+
+          python - <<'PY'
+          import json
+
+          with open("matchs.json", "r", encoding="utf-8") as f:
+              data = json.load(f)
+
+          print("Nombre de matchs reçus :", data.get("results"))
+
+          if data.get("errors"):
+              print("ERREURS API :", data["errors"])
+
+          for match in data.get("response", []):
+              home = match["teams"]["home"]["name"]
+              away = match["teams"]["away"]["name"]
+              date = match["fixture"]["date"]
+              status = match["fixture"]["status"]["short"]
+
+              print(f"{home} - {away} | {date} | {status}")
+          PY
