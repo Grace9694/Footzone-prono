@@ -28,4 +28,6 @@ jobs:
         run: python scripts/analyse.py
 
       - name: Préparer les données statistiques
+        env:
+          API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
         run: python scripts/statistiques.py
