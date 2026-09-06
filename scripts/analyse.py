@@ -1,7 +1,7 @@
 import json
 
 
-# Compétitions que Footzone considère comme prioritaires
+# Compétitions prioritaires
 COMPETITIONS_PRIORITAIRES = {
     "UEFA Champions League",
     "UEFA Europa League",
@@ -25,7 +25,7 @@ def charger_matchs():
         with open("matchs.json", "r", encoding="utf-8") as fichier:
             data = json.load(fichier)
     except FileNotFoundError:
-        print("ERREUR : le fichier matchs.json est introuvable.")
+        print("ERREUR : matchs.json est introuvable.")
         raise SystemExit(1)
 
     if data.get("errors"):
@@ -37,26 +37,26 @@ def charger_matchs():
 
 def calculer_score_initial(match):
     """
-    Premier score de sélection.
-    Ce score n'est PAS encore un pronostic.
+    Score de présélection.
+    Ce n'est PAS encore le score sportif final.
     """
 
     score = 0
 
     league = match["league"]["name"]
 
-    # Priorité aux grandes compétitions
+    # Grande compétition
     if league in COMPETITIONS_PRIORITAIRES:
         score += 40
 
-    # Deux équipes correctement identifiées
+    # Deux équipes identifiées
     home = match["teams"]["home"]["name"]
     away = match["teams"]["away"]["name"]
 
     if home and away:
         score += 20
 
-    # Horaire disponible
+    # Date/heure disponible
     if match["fixture"].get("date"):
         score += 10
 
@@ -64,44 +64,57 @@ def calculer_score_initial(match):
 
 
 def filtrer_matchs(matchs):
-    selection = []
+    candidats = []
 
     for match in matchs:
 
         statut = match["fixture"]["status"]["short"]
 
-        # On ignore les matchs déjà terminés,
-        # annulés, reportés ou abandonnés
+        # On ignore les matchs non exploitables
         if statut in {"FT", "AET", "PEN", "CANC", "PST", "ABD"}:
             continue
 
         score = calculer_score_initial(match)
 
-        selection.append({
-            "score": score,
+        candidats.append({
+            "score_initial": score,
             "match": match
         })
 
-    # Meilleur score en premier
-    selection.sort(
-        key=lambda element: element["score"],
+    # Meilleurs candidats en premier
+    candidats.sort(
+        key=lambda element: element["score_initial"],
         reverse=True
     )
 
-    return selection
+    # Maximum 20 candidats pour l'analyse approfondie
+    return candidats[:20]
 
 
-def afficher_selection(selection):
+def sauvegarder_candidats(candidats):
+
+    with open("candidats.json", "w", encoding="utf-8") as fichier:
+        json.dump(
+            candidats,
+            fichier,
+            ensure_ascii=False,
+            indent=2
+        )
+
+    print("Candidats sauvegardés dans : candidats.json")
+
+
+def afficher_selection(candidats):
 
     print()
     print("=" * 70)
-    print("FOOTZONE PRONO — PREMIÈRE SÉLECTION")
+    print("FOOTZONE PRONO — CANDIDATS À ANALYSER")
     print("=" * 70)
 
-    print("Matchs candidats :", len(selection))
+    print("Nombre de candidats :", len(candidats))
     print()
 
-    for numero, element in enumerate(selection[:20], start=1):
+    for numero, element in enumerate(candidats, start=1):
 
         match = element["match"]
 
@@ -112,7 +125,7 @@ def afficher_selection(selection):
 
         print(
             f"{numero}. "
-            f"[Score {element['score']}/70] "
+            f"[Score initial {element['score_initial']}/70] "
             f"{heure} | "
             f"{league} | "
             f"{home} - {away}"
@@ -120,14 +133,14 @@ def afficher_selection(selection):
 
     print()
     print("=" * 70)
-    print("FIN DE LA PREMIÈRE SÉLECTION")
-    print("=" * 70)
 
 
 if __name__ == "__main__":
 
     matchs = charger_matchs()
 
-    selection = filtrer_matchs(matchs)
+    candidats = filtrer_matchs(matchs)
 
-    afficher_selection(selection)
+    sauvegarder_candidats(candidats)
+
+    afficher_selection(candidats)
